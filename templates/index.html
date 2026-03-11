@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ETL - Validation testing</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #a8e6cf 0%, #88d8b0 50%, #64b5f6 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: linear-gradient(90deg, #ff9a9e 0%, #fad0c4 50%, #a1c4fd 100%);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 10px 10px 0 0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .panel {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            overflow: hidden;
+            transition: transform 0.2s;
+        }
+
+        .panel:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .panel-header {
+            padding: 15px 25px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .source-header {
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+        }
+
+        .target-header {
+            background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%);
+        }
+
+        .panel-content {
+            padding: 25px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .form-label .icon {
+            margin-right: 8px;
+            font-size: 16px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #88d8b0;
+            box-shadow: 0 0 0 3px rgba(136, 216, 176, 0.2);
+        }
+
+        .form-control.light-bg {
+            background-color: #f0f7ff;
+        }
+
+        select.form-control {
+            cursor: pointer;
+        }
+
+        .section-title {
+            display: flex;
+            align-items: center;
+            font-size: 15px;
+            font-weight: 700;
+            color: #444;
+            margin: 25px 0 15px 0;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .section-title .icon {
+            margin-right: 8px;
+        }
+
+        .hint-text {
+            font-size: 12px;
+            color: #888;
+            margin-top: 5px;
+        }
+
+        .success-message {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 10px 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            display: none;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .success-message.show {
+            display: flex;
+        }
+
+        .table-selection {
+            display: none;
+            margin-top: 20px;
+        }
+
+        .table-selection.show {
+            display: block;
+        }
+
+        .footer {
+            margin-top: 30px;
+            background: white;
+            padding: 20px 30px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .footer-info {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .footer-buttons {
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn-warning {
+            background: #ffd93d;
+            color: #333;
+        }
+
+        .btn-warning:hover {
+            background: #ffe66d;
+            transform: scale(1.05);
+        }
+
+        .btn-danger {
+            background: #ff6b9d;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #ff5252;
+            transform: scale(1.05);
+        }
+
+        .btn-primary {
+            background: #4ecdc4;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #44bdb5;
+            transform: scale(1.05);
+        }
+
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 ETL - Validation testing</h1>
+        </div>
+
+        <div class="main-content">
+            <!-- Source Configuration Panel -->
+            <div class="panel">
+                <div class="panel-header source-header">
+                    📊 Configure your data source connection
+                </div>
+                <div class="panel-content">
+                    <div class="form-group">
+                        <label class="form-label">
+                            <span class="icon">📦</span>
+                            Source Type
+                        </label>
+                        <select class="form-control" id="sourceType">
+                            <option value="RDBMS">RDBMS</option>
+                            <option value="File">File</option>
+                            <option value="API">API</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <span class="icon">📦</span>
+                            Source Database Type
+                        </label>
+                        <select class="form-control" id="sourceDbType">
+                            <option value="">-- Select Database Type --</option>
+                            <option value="SQL Server">SQL Server</option>
+                            <option value="MySQL">MySQL</option>
+                            <option value="PostgreSQL">PostgreSQL</option>
+                            <option value="Oracle">Oracle</option>
+                            <option value="MongoDB">MongoDB</option>
+                        </select>
+                    </div>
+
+                    <div class="section-title">
+                        <span class="icon">⚙</span>
+                        Database Connection Settings
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <span class="icon">🖥️</span>
+                            Server / Host
+                        </label>
+                        <input type="text" class="form-control light-bg" id="serverHost"
+                               placeholder="e.g., localhost, DESKTOP-NAME\SQLEXPRESS">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <span class="icon">📦</span>
+                            Database Name
+                        </label>
+                        <input type="text" class="form-control light-bg" id="dbName"
+                               placeholder="Enter database name">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">
+                            <span class="icon">📂</span>
+                            Schema (PostgreSQL)
+                        </label>
+                        <input type="text" class="form-control light-bg" id="schema"
+                               placeholder="e.g., public (default)">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <span class="icon">🔌</span>
+                            Port
+                        </label>
+                        <input type="text" class="form-control light-bg" id="port"
+                               placeholder="Default port will be used if empty">
+                        <div class="hint-text">1433 for SQL Server, 3306 for MySQL, 5432 for PostgreSQL</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <span class="icon">🔐</span>
+                            Authentication Type
+                        </label>
+                        <select class="form-control" id="authType">
+                            <option value="">-- Select Authentication --</option>
+                            <option value="SQL Server Authentication">SQL Server Authentication</option>
+                            <option value="Windows Authentication">Windows Authentication</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <span class="icon">👤</span>
+                            Username
+                        </label>
+                        <input type="text" class="form-control light-bg" id="username"
+                               placeholder="Enter username">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <span class="icon">🔒</span>
+                            Password
+                        </label>
+                        <input type="password" class="form-control light-bg" id="password"
+                               placeholder="Enter password">
+                    </div>
+
+                    <div class="form-group" style="margin-top: 25px;">
+                        <button class="btn btn-primary" onclick="testSourceConnection()" style="width: 100%;">
+                            🔌 Test Source Connection
+                        </button>
+                    </div>
+
+                    <div class="success-message" id="sourceSuccessMessage">
+                        <span>✅</span>
+                        <span>Loaded connection: "Source"</span>
+                    </div>
+
+                    <div class="table-selection" id="sourceTableSection">
+                        <div class="form-group">
+                            <label class="form-label">
+                                <span class="icon">📋</span>
+                                Source Table
+                            </label>
+                            <select class="form-control" id="sourceTableDropdown" onchange="selectSourceTable()">
+                                <option value="">-- Select Source Table --</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Target Configuration Panel -->
+            <div class="panel">
+                <div class="panel-header target-header">
+                    📊 Configure your target data destination
+                </div>
+                <div class="panel-content">
+                    <div class="form-group">
+                        <label class="form-label">
+                            <span class="icon">📦</span>
+                            Target Type
+                        </label>
+                        <select class="form-control" id="targetType">
+                            <option value="RDBMS">RDBMS</option>
+                            <option value="Flat File">Flat File</option>
+                            <option value="Data Platform / Lakehouse">Data Platform / Lakehouse</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <span class="icon">📦</span>
+                            Target Database Type
+                        </label>
+                        <select class="form-control" id="targetDbType">
+                            <option value="">-- Select Database Type --</option>
+                            <option value="SQL Server">SQL Server</option>
+                            <option value="MySQL">MySQL</option>
+                            <option value="PostgreSQL">PostgreSQL</option>
+                            <option value="Oracle">Oracle</option>
+                            <option value="MongoDB">MongoDB</option>
+                        </select>
+                    </div>
+
+                    <div class="section-title">
+                        <span class="icon">⚙</span>
+                        Database Connection Settings
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <span class="icon">🖥️</span>
+                            Server / Host
+                        </label>
+                        <input type="text" class="form-control light-bg" id="targetServerHost"
+                               placeholder="e.g., localhost, DESKTOP-NAME\SQLEXPRESS">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <span class="icon">📦</span>
+                            Database Name
+                        </label>
+                        <input type="text" class="form-control light-bg" id="targetDbName"
+                               placeholder="Enter database name">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">
+                            <span class="icon">📂</span>
+                            Schema (PostgreSQL)
+                        </label>
+                        <input type="text" class="form-control light-bg" id="targetSchema"
+                               placeholder="e.g., public (default)">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <span class="icon">🔌</span>
+                            Port
+                        </label>
+                        <input type="text" class="form-control light-bg" id="targetPort"
+                               placeholder="Default port will be used if empty">
+                        <div class="hint-text">1433 for SQL Server, 3306 for MySQL, 5432 for PostgreSQL</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <span class="icon">🔐</span>
+                            Authentication Type
+                        </label>
+                        <select class="form-control" id="targetAuthType">
+                            <option value="">-- Select Authentication --</option>
+                            <option value="SQL Server Authentication">SQL Server Authentication</option>
+                            <option value="Windows Authentication">Windows Authentication</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <span class="icon">👤</span>
+                            Username
+                        </label>
+                        <input type="text" class="form-control light-bg" id="targetUsername"
+                               placeholder="Enter username">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <span class="icon">🔒</span>
+                            Password
+                        </label>
+                        <input type="password" class="form-control light-bg" id="targetPassword"
+                               placeholder="Enter password">
+                    </div>
+
+                    <div class="form-group" style="margin-top: 25px;">
+                        <button class="btn btn-primary" onclick="testTargetConnection()" style="width: 100%;">
+                            🔌 Test Target Connection
+                        </button>
+                    </div>
+
+                    <div class="success-message" id="targetSuccessMessage">
+                        <span>✅</span>
+                        <span>Loaded connection: "Target"</span>
+                    </div>
+
+                    <div class="table-selection" id="targetTableSection">
+                        <div class="form-group">
+                            <label class="form-label">
+                                <span class="icon">📋</span>
+                                Target Table
+                            </label>
+                            <select class="form-control" id="targetTableDropdown" onchange="selectTargetTable()">
+                                <option value="">-- Select Target Table --</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <div class="footer-info">
+                ETL - Validation testing © 2026 | Powered by Python & Flask
+            </div>
+            <div class="footer-buttons">
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let sourceSelectedTable = null;
+        let targetSelectedTable = null;
+        let sourceConnectionSuccess = false;
+        let targetConnectionSuccess = false;
+        async function testSourceConnection() {
+            const sourceConfig = {
+                sourceType: document.getElementById('sourceType').value,
+                sourceDbType: document.getElementById('sourceDbType').value,
+                serverHost: document.getElementById('serverHost').value,
+                dbName: document.getElementById('dbName').value,
+                schema: document.getElementById('schema').value,
+                port: document.getElementById('port').value,
+                authType: document.getElementById('authType').value,
+                username: document.getElementById('username').value,
+                password: document.getElementById('password').value
+            };
+
+            console.log('Testing Source Connection:', sourceConfig);
+
+            try {
+                const response = await fetch('/test-source-connection', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(sourceConfig)
+                });
+
+                const result = await response.json();
+                if (result.status === 'success') {
+                    sourceConnectionSuccess = true;
+                    alert('✅ ' + result.message);
+                    // Show success message and load tables
+                    document.getElementById('sourceSuccessMessage').classList.add('show');
+                    await loadSourceTables(sourceConfig);
+                    checkBothConnectionsSuccess();
+                } else {
+                    alert('❌ ' + result.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('❌ Error testing source connection');
+            }
+        }
+
+        async function testTargetConnection() {
+            const targetConfig = {
+                targetType: document.getElementById('targetType').value,
+                targetDbType: document.getElementById('targetDbType').value,
+                targetServerHost: document.getElementById('targetServerHost').value,
+                targetDbName: document.getElementById('targetDbName').value,
+                targetSchema: document.getElementById('targetSchema').value,
+                targetPort: document.getElementById('targetPort').value,
+                targetAuthType: document.getElementById('targetAuthType').value,
+                targetUsername: document.getElementById('targetUsername').value,
+                targetPassword: document.getElementById('targetPassword').value
+            };
+
+            console.log('Testing Target Connection:', targetConfig);
+
+            try {
+                const response = await fetch('/test-target-connection', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(targetConfig)
+                });
+
+                const result = await response.json();
+                if (result.status === 'success') {
+                    targetConnectionSuccess = true;
+                    alert('✅ ' + result.message);
+                    // Show success message and load tables
+                    document.getElementById('targetSuccessMessage').classList.add('show');
+                    await loadTargetTables(targetConfig);
+                    checkBothConnectionsSuccess();
+                } else {
+                    alert('❌ ' + result.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('❌ Error testing target connection');
+            }
+        }
+
+        async function loadSourceTables(config) {
+            try {
+                const response = await fetch('/get-source-tables', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(config)
+                });
+
+                const result = await response.json();
+                if (result.status === 'success') {
+                    console.log('Source tables received from backend:', result.tables);
+                    const dropdown = document.getElementById('sourceTableDropdown');
+                    dropdown.innerHTML = '<option value="">-- Select Source Table --</option>';
+                    result.tables.forEach(table => {
+                        const option = document.createElement('option');
+                        option.value = table;
+                        option.textContent = table;
+                        dropdown.appendChild(option);
+                    });
+                    document.getElementById('sourceTableSection').classList.add('show');
+                } else {
+                    console.error('Failed to load source tables:', result.message);
+                }
+            } catch (error) {
+                console.error('Error loading source tables:', error);
+                alert('❌ Error loading source tables: ' + error.message);
+            }
+        }
+
+        async function loadTargetTables(config) {
+            try {
+                const response = await fetch('/get-target-tables', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(config)
+                });
+
+                const result = await response.json();
+                if (result.status === 'success') {
+                    const dropdown = document.getElementById('targetTableDropdown');
+                    dropdown.innerHTML = '<option value="">-- Select Target Table --</option>';
+                    
+                    result.tables.forEach(table => {
+                        const option = document.createElement('option');
+                        option.value = table;
+                        option.textContent = table;
+                        dropdown.appendChild(option);
+                    });
+                    
+                    document.getElementById('targetTableSection').classList.add('show');
+                }
+            } catch (error) {
+                console.error('Error loading target tables:', error);
+                alert('❌ Error loading target tables: ' + error.message);
+            }
+        }
+
+        function selectSourceTable() {
+            const dropdown = document.getElementById('sourceTableDropdown');
+            sourceSelectedTable = dropdown.value;
+            if (sourceSelectedTable) {
+                console.log('Selected source table:', sourceSelectedTable);
+                sessionStorage.setItem('selectedSourceTable', sourceSelectedTable);
+            }
+            updateProceedButtonState();
+        }
+
+        function selectTargetTable() {
+            const dropdown = document.getElementById('targetTableDropdown');
+            targetSelectedTable = dropdown.value;
+            if (targetSelectedTable) {
+                console.log('Selected target table:', targetSelectedTable);
+                sessionStorage.setItem('selectedTargetTable', targetSelectedTable);
+                // Get source table from sessionStorage
+                const sourceSelectedTable = sessionStorage.getItem('selectedSourceTable') || '';
+                if (sourceSelectedTable) {
+                    // Navigate to validation dashboard with both tables as query params
+                    const url = `/validation-dashboard?source_table=${encodeURIComponent(sourceSelectedTable)}&target_table=${encodeURIComponent(targetSelectedTable)}`;
+                    window.location.href = url;
+                }
+            }
+            updateProceedButtonState();
+        }
+
+        function checkBothConnectionsSuccess() {
+            // Only show the Proceed button if both connections are successful
+            updateProceedButtonState();
+        }
+
+        function updateProceedButtonState() {
+            const proceedBtn = document.getElementById('proceedButton');
+            // Show the button if both connections are successful
+            if (sourceConnectionSuccess && targetConnectionSuccess) {
+                proceedBtn.style.display = 'inline-block';
+                // Enable only if both tables are selected
+                if (sourceSelectedTable && targetSelectedTable) {
+                    proceedBtn.disabled = false;
+                } else {
+                    proceedBtn.disabled = true;
+                }
+            } else {
+                proceedBtn.style.display = 'none';
+            }
+        }
+
+        function proceedToQueryPage() {
+            window.location.href = '/query-execution';
+        }
+    </script>
+</body>
+</html>
+

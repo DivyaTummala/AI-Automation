@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Table Count Validation Results</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f6f8fa; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 40px auto; background: #fff; border-radius: 10px; box-shadow: 0 2px 8px #0001; padding: 32px; }
+        h2 { color: #333; text-align: center; }
+        .result-table { width: 100%; border-collapse: collapse; margin: 24px 0; }
+        .result-table th, .result-table td { padding: 12px 16px; border-bottom: 1px solid #eee; text-align: left; }
+        .result-table th { background: #f0f4f8; }
+        .match { color: #2e7d32; font-weight: bold; }
+        .mismatch { color: #c62828; font-weight: bold; }
+        .back-btn { display: block; margin: 0 auto; padding: 10px 24px; background: #1976d2; color: #fff; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; text-align: center; }
+        .back-btn:hover { background: #125ea2; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Table Count Validation Results</h2>
+        <table class="result-table">
+            <tr>
+                <th>Table</th>
+                <th>Row Count</th>
+            </tr>
+            <tr>
+                <td>{{ source_table }}</td>
+                <td>{{ source_count }}</td>
+            </tr>
+            <tr>
+                <td>{{ target_table }}</td>
+                <td>{{ target_count }}</td>
+            </tr>
+        </table>
+        <div id="validationResult" style="text-align:center; font-size:18px; margin:24px 0;">
+            {% if counts_match %}
+                <span class="match">✔️ Counts Match!</span>
+            {% else %}
+                <span class="mismatch">❌ Counts Do Not Match</span>
+            {% endif %}
+        </div>
+        <button class="back-btn" onclick="window.location.href='query_execution'">← Back to Query Page</button>
+    </div>
+</body>
+</html>

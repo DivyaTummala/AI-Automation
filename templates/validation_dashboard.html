@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ETL Validation Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; background: #f6f8fa; }
+        .container { display: flex; min-height: 100vh; }
+        .sidebar {
+            width: 260px; background: #232946; color: #fff; padding: 32px 0 0 0;
+            display: flex; flex-direction: column; align-items: stretch;
+        }
+        .sidebar h2 { text-align: center; margin-bottom: 32px; }
+        .nav-link {
+            padding: 18px 32px; cursor: pointer; border: none; background: none; color: #fff;
+            text-align: left; font-size: 16px; border-left: 4px solid transparent; transition: 0.2s;
+        }
+        .nav-link.active, .nav-link:hover { background: #121629; border-left: 4px solid #eebbc3; }
+        .main-content { flex: 1; padding: 40px; }
+        .card {
+            background: #fff; border-radius: 12px; box-shadow: 0 2px 8px #0001;
+            padding: 32px; margin-bottom: 32px; display: none;
+        }
+        .card.active { display: block; }
+        .section-title { font-size: 22px; color: #232946; margin-bottom: 18px; }
+        .file-select { margin-bottom: 24px; }
+        .file-select label { font-weight: bold; margin-right: 8px; }
+        .file-select select { padding: 6px 12px; }
+        .proceed-btn { margin-bottom: 32px; padding: 10px 24px; background: #1976d2; color: #fff; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; }
+        .proceed-btn:hover { background: #125ea2; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="sidebar">
+        <h2>Validation Menu</h2>
+        <button class="nav-link active" onclick="showCard(0)">1. Record Count</button>
+        <button class="nav-link" onclick="showCard(1)">2. Schema Validation</button>
+        <button class="nav-link" onclick="showCard(2)">3. Null Value</button>
+        <button class="nav-link" onclick="showCard(3)">4. Data Type</button>
+        <button class="nav-link" onclick="showCard(4)">5. Duplicate Record</button>
+        <button class="nav-link" onclick="showCard(5)">6. Primary Key</button>
+        <button class="nav-link" onclick="showCard(6)">7. Full Data Load</button>
+    </div>
+    <div class="main-content">
+        <!-- Selected Tables Display -->
+        <div class="file-select">
+            <label><b>Source Table:</b></label>
+            <span>{{ source_table }}</span>
+            <label style="margin-left:20px;"><b>Target Table:</b></label>
+            <span>{{ target_table }}</span>
+        </div>
+        <!-- Validation Cards -->
+        <div id="validationCards" style="display:block;">
+            <div class="card active">
+                <div class="section-title">Record Count Validation</div>
+                <div id="recordCountResult">Counts: Source = 4, Target = 5. <span style="color:red;">❌ Not Matching</span></div>
+            </div>
+            <div class="card">
+                <div class="section-title">Schema Validation</div>
+                <div id="schemaValidationError" style="color: red;"></div>
+                <table class="result-table" style="margin-bottom: 24px;">
+                    <thead>
+                        <tr>
+                            <th>Column</th>
+                            <th>Source Type</th>
+                            <th>Source Length</th>
+                            <th>Target Type</th>
+                            <th>Target Length</th>
+                            <th>Type Match</th>
+                            <th>Length Match</th>
+                        </tr>
+                    </thead>
+                    <tbody id="schemaValidationTableBody">
+                        <!-- Results will be inserted here by JS -->
+                    </tbody>
+                </table>
+                <script>
+                async function fetchSchemaValidation() {
+                    const sourceTable = "{{ source_table }}";
+                    const targetTable = "{{ target_table }}";
+                    if (!sourceTable || !targetTable) {
+                        document.getElementById('schemaValidationError').textContent = 'Please select both source and target tables.';
+                        return;
+                    }
+                    try {
+                        const url = `/validate-schema?source_table=${encodeURIComponent(sourceTable)}&target_table=${encodeURIComponent(targetTable)}`;
+                        const response = await fetch(url);
+                        const data = await response.json();
+                        if (data.error) {
+                            document.getElementById('schemaValidationError').textContent = data.error;
+                            return;
+                        }
+                        let html = '';
+                        data.schema.forEach(row => {
+                            html += `<tr><td>${row.Column}</td><td>${row["Source Type"] || ''}</td><td>${row["Source Length"] === null ? '' : row["Source Length"]}</td><td>${row["Target Type"] || ''}</td><td>${row["Target Length"] === null ? '' : row["Target Length"]}</td><td style=\"color:${row["Type Match"] ? 'green' : 'red'};font-weight:bold;\">${row["Type Match"] ? 'True' : 'False'}</td><td style=\"color:${row["Length Match"] ? 'green' : 'red'};font-weight:bold;\">${row["Length Match"] ? 'True' : 'False'}</td></tr>`;
+                        });
+                        document.getElementById('schemaValidationTableBody').innerHTML = html;
+                        document.getElementById('schemaValidationError').textContent = '';
+                    } catch (error) {
+                        document.getElementById('schemaValidationError').textContent = 'Error fetching schema validation: ' + error;
+                    }
+                }
+                // On page load, fetch schema validation
+                window.addEventListener('DOMContentLoaded', fetchSchemaValidation);
+                </script>
+            </div>
+            <div class="card">
+                <div class="section-title">Null Value Validation</div>
+                <div id="nullValueError" style="color: red;"></div>
+                <table class="result-table" style="margin-bottom: 24px;">
+                    <thead>
+                        <tr>
+                            <th>Column</th>
+                            <th>Source NULLs</th>
+                            <th>Target NULLs</th>
+                            <th>Match</th>
+                        </tr>
+                    </thead>
+                    <tbody id="nullValueTableBody">
+                        <!-- Results will be inserted here by JS -->
+                    </tbody>
+                </table>
+                <script>
+                async function fetchNullValueValidation() {
+                    const sourceTable = "{{ source_table }}";
+                    const targetTable = "{{ target_table }}";
+                    if (!sourceTable || !targetTable) {
+                        document.getElementById('nullValueError').textContent = 'Please select both source and target tables.';
+                        return;
+                    }
+                    try {
+                        const url = `/validate-null-values?source_table=${encodeURIComponent(sourceTable)}&target_table=${encodeURIComponent(targetTable)}`;
+                        const response = await fetch(url);
+                        const data = await response.json();
+                        if (data.error) {
+                            document.getElementById('nullValueError').textContent = data.error;
+                            return;
+                        }
+                        let html = '';
+                        data.nulls.forEach(row => {
+                            html += `<tr><td>${row.Column}</td><td>${row["Source NULLs"]}</td><td>${row["Target NULLs"]}</td><td style=\"color:${row.Match ? 'green' : 'red'};font-weight:bold;\">${row.Match ? 'True' : 'False'}</td></tr>`;
+                        });
+                        document.getElementById('nullValueTableBody').innerHTML = html;
+                        document.getElementById('nullValueError').textContent = '';
+                    } catch (error) {
+                        document.getElementById('nullValueError').textContent = 'Error fetching null value validation: ' + error;
+                    }
+                }
+                // On page load, fetch null value validation
+                window.addEventListener('DOMContentLoaded', fetchNullValueValidation);
+                </script>
+            </div>
+            <div class="card">
+                <div class="section-title">Data Type Validation</div>
+                <div id="dataTypeResult">[Results here]</div>
+            </div>
+            <div class="card">
+                <div class="section-title">Duplicate Record Validation</div>
+                <div id="duplicateError" style="color: red;"></div>
+                <div style="margin-bottom: 12px;">
+                    <label for="duplicateKeyColumns"><b>Key Columns (comma separated):</b></label>
+                    <input type="text" id="duplicateKeyColumns" placeholder="e.g. id, name" style="padding: 4px 8px; width: 220px;">
+                    <button onclick="fetchDuplicateValidation()" style="padding: 6px 16px; margin-left: 8px;">Validate</button>
+                </div>
+                <div id="duplicateResult"></div>
+                <script>
+                async function fetchDuplicateValidation() {
+                    const sourceTable = "{{ source_table }}";
+                    const targetTable = "{{ target_table }}";
+                    const keyColumns = document.getElementById('duplicateKeyColumns').value;
+                    if (!sourceTable || !targetTable) {
+                        document.getElementById('duplicateError').textContent = 'Please select both source and target tables.';
+                        return;
+                    }
+                    if (!keyColumns.trim()) {
+                        document.getElementById('duplicateError').textContent = 'Please enter key columns.';
+                        return;
+                    }
+                    try {
+                        const url = `/validate-duplicates?source_table=${encodeURIComponent(sourceTable)}&target_table=${encodeURIComponent(targetTable)}&key_columns=${encodeURIComponent(keyColumns)}`;
+                        const response = await fetch(url);
+                        const data = await response.json();
+                        if (data.error) {
+                            document.getElementById('duplicateError').textContent = data.error;
+                            document.getElementById('duplicateResult').innerHTML = '';
+                            return;
+                        }
+                        let html = `<div><b>Source Duplicates:</b> ${data.source_total} | <b>Target Duplicates:</b> ${data.target_total}</div>`;
+                        if (data.key_columns && data.key_columns.length > 0) {
+                            html += '<div style="margin-top:10px;"><b>Sample Duplicates (Source):</b></div>';
+                            html += renderDuplicateTable(data.source_duplicates, data.key_columns);
+                            html += '<div style="margin-top:10px;"><b>Sample Duplicates (Target):</b></div>';
+                            html += renderDuplicateTable(data.target_duplicates, data.key_columns);
+                        }
+                        document.getElementById('duplicateResult').innerHTML = html;
+                        document.getElementById('duplicateError').textContent = '';
+                    } catch (error) {
+                        document.getElementById('duplicateError').textContent = 'Error fetching duplicate validation: ' + error;
+                        document.getElementById('duplicateResult').innerHTML = '';
+                    }
+                }
+                function renderDuplicateTable(rows, columns) {
+                    if (!rows || rows.length === 0) return '<div style="color:gray;">No sample duplicates found.</div>';
+                    let html = '<table class="result-table" style="margin-bottom: 8px;"><thead><tr>';
+                    columns.forEach(col => { html += `<th>${col}</th>`; });
+                    html += '<th>dup_count</th></tr></thead><tbody>';
+                    rows.forEach(row => {
+                        html += '<tr>';
+                        columns.forEach(col => { html += `<td>${row[col]}</td>`; });
+                        html += `<td>${row.dup_count}</td></tr>`;
+                    });
+                    html += '</tbody></table>';
+                    return html;
+                }
+                </script>
+            </div>
+            <div class="card">
+                <div class="section-title">Primary Key Validation</div>
+                <div id="primaryKeyResult">[Results here]</div>
+            </div>
+            <div class="card">
+                <div class="section-title">Full Data Load</div>
+                <div id="fullLoadResult">[Results here]</div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    function showCard(idx) {
+        document.querySelectorAll('.nav-link').forEach((btn, i) => {
+            btn.classList.toggle('active', i === idx);
+        });
+        document.querySelectorAll('.card').forEach((card, i) => {
+            card.classList.toggle('active', i === idx);
+        });
+    }
+    
+    // Fetch and display record count validation result
+    async function fetchRecordCountValidation() {
+        const sourceTable = "{{ source_table }}";
+        const targetTable = "{{ target_table }}";
+        if (!sourceTable || !targetTable) {
+            document.getElementById('recordCountResult').textContent = 'Please select both source and target tables.';
+            return;
+        }
+        try {
+            const url = `/validate-table-counts?source_table=${encodeURIComponent(sourceTable)}&target_table=${encodeURIComponent(targetTable)}`;
+            const response = await fetch(url);
+            const html = await response.text();
+            // Extract the relevant result from the returned HTML (simple approach: parse out the table and result)
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const table = doc.querySelector('.result-table');
+            const validationResult = doc.querySelector('#validationResult');
+            if (table && validationResult) {
+                document.getElementById('recordCountResult').innerHTML = table.outerHTML + validationResult.outerHTML;
+            } else {
+                document.getElementById('recordCountResult').textContent = 'Validation result not available.';
+            }
+        } catch (error) {
+            document.getElementById('recordCountResult').textContent = 'Error fetching validation: ' + error;
+        }
+    }
+
+    // On page load, fetch record count validation
+    window.addEventListener('DOMContentLoaded', fetchRecordCountValidation);
+</script>
+</body>
+</html>
